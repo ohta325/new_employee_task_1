@@ -1,0 +1,7 @@
+tables:
+    required:
+        - product_code
+        - flg
+    drop:
+        - test
+        - dummy
