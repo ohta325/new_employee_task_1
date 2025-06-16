@@ -1,7 +1,6 @@
 import sqlite3
 import yaml
 import csv
-import os
 
 def main():
     db_file = 'test_database.db'
@@ -20,20 +19,17 @@ def main():
         else:
             print(f"テーブル '{table_name}' の情報が見つからないか、クエリに問題があります。")
 
-        print(table_columns)
 
         yaml_filename = "col.yaml"
         with open(yaml_filename) as file:
             dict_col = yaml.safe_load(file)
         
         required_columns = dict_col["tables"]["required"]
-        print(required_columns)
 
         drop_columns = dict_col["tables"]["drop"]
-        print(drop_columns)
 
         result_columns = [item for item in table_columns if item not in drop_columns]
-        print(result_columns)
+
  
         # SQLのSELECT句用に各カラム名をカンマ区切りで結合
         table_columns_join = ','.join(table_columns)
@@ -57,10 +53,8 @@ def main():
 
         print("\n--- 'product_1'と'product_2'を'product_1'のカラムに寄せ結合したデータ ---")
         productmix_query = f"SELECT {table_columns_join} FROM product_1 UNION ALL SELECT {table_columns_join} FROM product_2"
-        print(f"実行するクエリ：{productmix_query}")
         cursor.execute(productmix_query)
         rows = cursor.fetchall()
-        print(f"選択されたカラム{table_columns}") 
         for row in rows:
             print(row)
 
@@ -76,10 +70,8 @@ def main():
                             UNION ALL
                             SELECT {table_columns_join} FROM product_2
                             WHERE {required_columns_or}"""
-        print(f"実行するクエリ：{product_null}")
         cursor.execute(product_null)
         rows = cursor.fetchall()
-        print(f"選択されたカラム{table_columns_join}")
         for row in rows:
             print(row)
         
@@ -95,10 +87,8 @@ def main():
                                 UNION ALL
                                 SELECT {table_columns_join} FROM product_2
                                 WHERE {required_columns_and}"""        
-        print(f"実行するクエリ：{product_not_null}")
         cursor.execute(product_not_null)
         rows = cursor.fetchall()
-        print(f"選択されたカラム：{table_columns_join}")
         for row in rows:
             print(row)
 
@@ -110,36 +100,36 @@ def main():
                             UNION ALL
                             SELECT {result_columns_join} FROM product_2
                             WHERE {required_columns_and}"""
-        print(f"実行するクエリ：{product_drop}")
         cursor.execute(product_drop)
         rows = cursor.fetchall()
-        print(f"選択されたカラム：{result_columns}")
         for row in rows:
             print(row)
 
         
         # priceとcountを乗算したuriage項目を追加して出力
         print("\n--- price と count を乗算した uriage 項目を追加 ---")
-        cursor.execute(f"""SELECT {result_columns_join}, price * count AS uriage
-                        FROM product_1 WHERE {required_columns_and}
-                        UNION ALL
-                        SELECT {result_columns_join}, price * count AS uriage
-                        FROM product_2 WHERE {required_columns_and}""")
+        column_uriage = f"""SELECT {result_columns_join}, price * count AS uriage
+                            FROM product_1 WHERE {required_columns_and}
+                            UNION ALL
+                            SELECT {result_columns_join}, price * count AS uriage
+                            FROM product_2 WHERE {required_columns_and}"""
+        cursor.execute(column_uriage)
         rows = cursor.fetchall()
         for row in rows:
             print(row)
         
         # product_cdごとのuriage合計を算出して、uriageの降順に出力
         print("\n--- product_cd ごとの uriage 合計を算出して、uriage の降順に出力---")
-        cursor.execute(f"""SELECT id, product_cd, price * count AS uriage
-                       FROM product_1
-                       WHERE product_cd IS NOT NULL
-                       UNION ALL
-                       SELECT id, product_cd, price * count AS uriage
-                       FROM product_2
-                       WHERE product_cd IS NOT NULL
-                       GROUP BY product_cd
-                       ORDER BY uriage DESC""")
+        column_uriage_sort = f"""SELECT id, product_cd, price * count AS uriage
+                                FROM product_1
+                                WHERE product_cd IS NOT NULL
+                                UNION ALL
+                                SELECT id, product_cd, price * count AS uriage
+                                FROM product_2
+                                WHERE product_cd IS NOT NULL
+                                GROUP BY product_cd
+                                ORDER BY uriage DESC"""
+        cursor.execute(column_uriage_sort)
         rows = cursor.fetchall()
         for row in rows:
             print(row)
@@ -155,7 +145,7 @@ def main():
         print("\n--- テーブル'master'と'product_1''product_2'を factory_cd で外部結合したデータ ---")
         # SELECT句の各カラムのテーブルを明示するために各カラム名を', product.'区切りで結合
         result_columns_out = ', product.'.join(result_columns)
-        cursor.execute(f"""SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
+        left_join = f"""SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
                         FROM(
                         SELECT {result_columns_join}, price * count AS uriage
                         FROM product_1 WHERE {required_columns_and}
@@ -163,73 +153,72 @@ def main():
                         SELECT {result_columns_join}, price * count AS uriage
                         FROM product_2 WHERE {required_columns_and}
                         ) AS product LEFT OUTER JOIN master AS m
-                        ON product.factory_cd = m.factory_cd
-                       """)
+                        ON product.factory_cd = m.factory_cd"""
+        cursor.execute(left_join)
         rows = cursor.fetchall()
         for row in rows:
             print(row)
 
         print("\n--- テーブル'master'と外部結合できなかった'product_1''product_2'のレコード ---")
-        cursor.execute(f"""SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
-                        FROM(
-                        SELECT {result_columns_join}, price * count AS uriage
-                        FROM product_1 WHERE {required_columns_and}
-                        UNION ALL
-                        SELECT {result_columns_join}, price * count AS uriage
-                        FROM product_2 WHERE {required_columns_and}
-                        ) AS product LEFT OUTER JOIN master AS m
-                        ON product.factory_cd = m.factory_cd
-                        WHERE m.factory_cd is null
-                       """)
+        na_left_join = f"""SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
+                            FROM(
+                            SELECT {result_columns_join}, price * count AS uriage
+                            FROM product_1 WHERE {required_columns_and}
+                            UNION ALL
+                            SELECT {result_columns_join}, price * count AS uriage
+                            FROM product_2 WHERE {required_columns_and}
+                            ) AS product LEFT OUTER JOIN master AS m
+                            ON product.factory_cd = m.factory_cd
+                            WHERE m.factory_cd is null"""
+        cursor.execute(na_left_join)
         rows = cursor.fetchall()
         for row in rows:
             print(row)
 
         print("\n--- テーブル'master'と外部結合できなかった'product_1''product_2'のレコードを除外したデータ ---")
-        cursor.execute(f"""SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
-                        FROM(
-                        SELECT {result_columns_join}, price * count AS uriage
-                        FROM product_1 WHERE {required_columns_and}
-                        UNION ALL
-                        SELECT {result_columns_join}, price * count AS uriage
-                        FROM product_2 WHERE {required_columns_and}
-                        ) AS product LEFT OUTER JOIN master AS m
-                        ON product.factory_cd = m.factory_cd
-                        WHERE m.factory_cd is not null
-                       """)
+        drop_na_left_join = f"""SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
+                                FROM(
+                                SELECT {result_columns_join}, price * count AS uriage
+                                FROM product_1 WHERE {required_columns_and} AND factory_cd is not null
+                                UNION ALL
+                                SELECT {result_columns_join}, price * count AS uriage
+                                FROM product_2 WHERE {required_columns_and} AND factory_cd is not null
+                                ) AS product LEFT OUTER JOIN master AS m
+                                ON product.factory_cd = m.factory_cd"""
+        cursor.execute(drop_na_left_join)
         rows = cursor.fetchall()
         for row in rows:
             print(row)
 
         print("\n--- product_cdの一意な値 ---")
-        cursor.execute(f"""SELECT distinct product.product_cd
-                        FROM(
-                        SELECT {result_columns_join}
-                        FROM product_1 WHERE {required_columns_and}
-                        UNION ALL
-                        SELECT {result_columns_join}
-                        FROM product_2 WHERE {required_columns_and}
-                        ) AS product LEFT OUTER JOIN master AS m
-                        ON product.factory_cd = m.factory_cd
-                        WHERE m.factory_cd is not null
-                       """)
+        product_cds = f"""SELECT distinct product.product_cd
+                            FROM(
+                            SELECT {result_columns_join}
+                            FROM product_1 WHERE {required_columns_and}
+                            UNION ALL
+                            SELECT {result_columns_join}
+                            FROM product_2 WHERE {required_columns_and}
+                            ) AS product LEFT OUTER JOIN master AS m
+                            ON product.factory_cd = m.factory_cd
+                            WHERE m.factory_cd is not null"""
+        cursor.execute(product_cds)
         rows = cursor.fetchall()
         for row in rows:
             print(row)
 
         print("\n--- テーブル'master'と'product_1''product_2'を外部結合したデータを dateとproduct_cd でソートしたデータ ---")
-        cursor.execute(f"""SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
-                        FROM(
-                        SELECT {result_columns_join}, price * count AS uriage
-                        FROM product_1 WHERE {required_columns_and}
-                        UNION ALL
-                        SELECT {result_columns_join}, price * count AS uriage
-                        FROM product_2 WHERE {required_columns_and}
-                        ) AS product LEFT OUTER JOIN master AS m
-                        ON product.factory_cd = m.factory_cd
-                        WHERE m.factory_cd is not null
-                        ORDER BY date, product_cd
-                       """)
+        sort_date_product_cd = f"""SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
+                                    FROM(
+                                    SELECT {result_columns_join}, price * count AS uriage
+                                    FROM product_1 WHERE {required_columns_and}
+                                    UNION ALL
+                                    SELECT {result_columns_join}, price * count AS uriage
+                                    FROM product_2 WHERE {required_columns_and}
+                                    ) AS product LEFT OUTER JOIN master AS m
+                                    ON product.factory_cd = m.factory_cd
+                                    WHERE m.factory_cd is not null
+                                    ORDER BY date, product_cd"""
+        cursor.execute(sort_date_product_cd)
         rows = cursor.fetchall()
         for row in rows:
             print(row)
@@ -244,18 +233,18 @@ def main():
 
         print("\n--- データをCSVファイルに出力します ---")
         output_csv_file = 'new_employee_task_1.csv'
-        cursor.execute(f"""SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
-                        FROM(
-                        SELECT {result_columns_join}, price * count AS uriage
-                        FROM product_1 WHERE {required_columns_and}
-                        UNION ALL
-                        SELECT {result_columns_join}, price * count AS uriage
-                        FROM product_2 WHERE {required_columns_and}
-                        ) AS product LEFT OUTER JOIN master AS m
-                        ON product.factory_cd = m.factory_cd
-                        WHERE m.factory_cd is not null
-                        ORDER BY date, product_cd
-                       """)
+        table_write_tocsv = f"""SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
+                                FROM(
+                                SELECT {result_columns_join}, price * count AS uriage
+                                FROM product_1 WHERE {required_columns_and}
+                                UNION ALL
+                                SELECT {result_columns_join}, price * count AS uriage
+                                FROM product_2 WHERE {required_columns_and}
+                                ) AS product LEFT OUTER JOIN master AS m
+                                ON product.factory_cd = m.factory_cd
+                                WHERE m.factory_cd is not null
+                                ORDER BY date, product_cd"""
+        cursor.execute(table_write_tocsv)
         column_names = [description[0] for description in cursor.description]
         with open(output_csv_file, 'w', newline='', encoding='utf-8') as csvfile:
             csv_writer = csv.writer(csvfile)
