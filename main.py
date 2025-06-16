@@ -1,6 +1,7 @@
 import sqlite3
 import yaml
 import csv
+import os
 
 def main():
     db_file = 'test_database.db'
@@ -239,6 +240,28 @@ def main():
         filtered_products = cursor.fetchall()
         for product in filtered_products:
             print(product)
+
+
+        print("\n--- データをCSVファイルに出力します ---")
+        output_csv_file = 'new_employee_task_1.csv'
+        cursor.execute(f"""SELECT product.{result_columns_out}, m.factory_name
+                        FROM(
+                        SELECT {result_columns_join}
+                        FROM product_1 WHERE {required_columns_and}
+                        UNION ALL
+                        SELECT {result_columns_join}
+                        FROM product_2 WHERE {required_columns_and}
+                        ) AS product LEFT OUTER JOIN master AS m
+                        ON product.factory_cd = m.factory_cd
+                        WHERE m.factory_cd is not null
+                        ORDER BY date, product_cd
+                       """)
+        column_names = [description[0] for description in cursor.description]
+        with open(output_csv_file, 'w', newline='', encoding='utf-8') as csvfile:
+            csv_writer = csv.writer(csvfile)
+            csv_writer.writerow(column_names)
+            csv_writer.writerows(cursor)
+        print(f"--- テーブルのデータが'{output_csv_file}'に正常に出力されました ---")
     
     except sqlite3.Error as e:
         print(f"データベース操作中にエラーが発生しました: {e}")
