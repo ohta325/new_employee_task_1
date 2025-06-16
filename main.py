@@ -155,12 +155,12 @@ def main():
         print("\n--- テーブル'master'と'product_1''product_2'を factory_cd で外部結合したデータ ---")
         # SELECT句の各カラムのテーブルを明示するために各カラム名を', product.'区切りで結合
         result_columns_out = ', product.'.join(result_columns)
-        cursor.execute(f"""SELECT product.{result_columns_out}, m.factory_name
+        cursor.execute(f"""SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
                         FROM(
-                        SELECT {result_columns_join}
+                        SELECT {result_columns_join}, price * count AS uriage
                         FROM product_1 WHERE {required_columns_and}
                         UNION ALL
-                        SELECT {result_columns_join}
+                        SELECT {result_columns_join}, price * count AS uriage
                         FROM product_2 WHERE {required_columns_and}
                         ) AS product LEFT OUTER JOIN master AS m
                         ON product.factory_cd = m.factory_cd
@@ -170,12 +170,12 @@ def main():
             print(row)
 
         print("\n--- テーブル'master'と外部結合できなかった'product_1''product_2'のレコード ---")
-        cursor.execute(f"""SELECT product.{result_columns_out}, m.factory_name
+        cursor.execute(f"""SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
                         FROM(
-                        SELECT {result_columns_join}
+                        SELECT {result_columns_join}, price * count AS uriage
                         FROM product_1 WHERE {required_columns_and}
                         UNION ALL
-                        SELECT {result_columns_join}
+                        SELECT {result_columns_join}, price * count AS uriage
                         FROM product_2 WHERE {required_columns_and}
                         ) AS product LEFT OUTER JOIN master AS m
                         ON product.factory_cd = m.factory_cd
@@ -186,12 +186,12 @@ def main():
             print(row)
 
         print("\n--- テーブル'master'と外部結合できなかった'product_1''product_2'のレコードを除外したデータ ---")
-        cursor.execute(f"""SELECT product.{result_columns_out}, m.factory_name
+        cursor.execute(f"""SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
                         FROM(
-                        SELECT {result_columns_join}
+                        SELECT {result_columns_join}, price * count AS uriage
                         FROM product_1 WHERE {required_columns_and}
                         UNION ALL
-                        SELECT {result_columns_join}
+                        SELECT {result_columns_join}, price * count AS uriage
                         FROM product_2 WHERE {required_columns_and}
                         ) AS product LEFT OUTER JOIN master AS m
                         ON product.factory_cd = m.factory_cd
@@ -218,12 +218,12 @@ def main():
             print(row)
 
         print("\n--- テーブル'master'と'product_1''product_2'を外部結合したデータを dateとproduct_cd でソートしたデータ ---")
-        cursor.execute(f"""SELECT product.{result_columns_out}, m.factory_name
+        cursor.execute(f"""SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
                         FROM(
-                        SELECT {result_columns_join}
+                        SELECT {result_columns_join}, price * count AS uriage
                         FROM product_1 WHERE {required_columns_and}
                         UNION ALL
-                        SELECT {result_columns_join}
+                        SELECT {result_columns_join}, price * count AS uriage
                         FROM product_2 WHERE {required_columns_and}
                         ) AS product LEFT OUTER JOIN master AS m
                         ON product.factory_cd = m.factory_cd
@@ -244,12 +244,12 @@ def main():
 
         print("\n--- データをCSVファイルに出力します ---")
         output_csv_file = 'new_employee_task_1.csv'
-        cursor.execute(f"""SELECT product.{result_columns_out}, m.factory_name
+        cursor.execute(f"""SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
                         FROM(
-                        SELECT {result_columns_join}
+                        SELECT {result_columns_join}, price * count AS uriage
                         FROM product_1 WHERE {required_columns_and}
                         UNION ALL
-                        SELECT {result_columns_join}
+                        SELECT {result_columns_join}, price * count AS uriage
                         FROM product_2 WHERE {required_columns_and}
                         ) AS product LEFT OUTER JOIN master AS m
                         ON product.factory_cd = m.factory_cd

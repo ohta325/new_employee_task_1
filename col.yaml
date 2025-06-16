@@ -1,6 +1,6 @@
 tables:
     required:
-        - product_code
+        - product_cd
         - flg
     drop:
         - test

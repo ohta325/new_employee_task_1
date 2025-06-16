@@ -1,0 +1,16 @@
+id,date,product_cd,price,count,factory_cd,flg,uriage,factory_name
+1,2025/6/1,productA,100,1,fcA,0,100,工場A
+2,2025/6/1,productB,200,2,fcA,0,400,工場A
+7,2025/6/1,productB,200,2,fcA,0,400,工場A
+3,2025/6/1,productC,300,3,fcA,0,900,工場A
+4,2025/6/1,productD,400,4,fcB,0,1600,工場B
+5,2025/6/1,productE,500,5,fcB,0,2500,工場B
+7,2025/6/2,productB,200,2,fcA,0,400,工場A
+9,2025/6/2,productE,500,4,fcB,0,2000,工場B
+1,2025/6/3,productA,100,1,fcC,0,100,工場C
+10,2025/6/3,productE,500,5,fcB,0,2500,工場B
+9,2025/6/3,productE,500,4,fcB,0,2000,工場B
+4,2025/6/4,productD,400,4,fcC,1,1600,工場C
+10,2025/6/4,productE,500,5,fcB,0,2500,工場B
+6,2025/6/5,productA,100,1,fcB,0,100,工場B
+5,2025/6/5,productE,500,5,fcA,1,2500,工場A
