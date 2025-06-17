@@ -92,10 +92,38 @@ WHERE (product_cd or flg) is not null
 SELECT
     product_cd,
     price * count AS uriage
-FROM product_1
+FROM(
+SELECT
+    p1.product_cd,
+    p1.price * p1.count AS uriage
+FROM product_1 AS p1
 WHERE product_cd IS NOT NULL
+UNION ALL
+SELECT
+    p2.product_cd,
+    p2.price * p2.count AS uriage
+FROM product_2 AS p2
+WHERE product_cd IS NOT NULL
+)AS product
 GROUP BY product_cd
 ORDER BY uriage desc
+
+
+SELECT product_cd, SUM(price * count)AS uriage
+FROM(
+SELECT
+    product_cd, price, count
+FROM product_1
+WHERE product_cd IS NOT NULL
+UNION ALL
+SELECT
+    product_cd, price, count
+FROM product_2
+WHERE product_cd IS NOT NULL
+) AS product
+GROUP BY product_cd
+ORDER BY uriage DESC
+
 
 SELECT * 
 FROM product_1 AS p1 left outer join master AS m
