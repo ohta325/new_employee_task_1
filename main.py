@@ -20,7 +20,6 @@ def main():
             table_columns = []
             for description in cursor.description:
                 table_columns.append(description[0])
-            print(table_columns)
         else:
             print(f"テーブル '{table_name}' の情報が見つからないか、クエリに問題があります。")
 
@@ -41,7 +40,6 @@ def main():
         for item in table_columns:
             if item not in drop_columns:
                 result_columns.append(item)
-        print(result_columns)
  
         # SQLのSELECT句用に各カラム名をカンマ区切りで結合
         table_columns_join = ','.join(table_columns)
@@ -63,7 +61,12 @@ def main():
             print(row)
 
         print("\n--- 'product_1'と'product_2'を'product_1'のカラムに寄せ結合したデータ ---")
-        productmix_query = f"SELECT {table_columns_join} FROM product_1 UNION ALL SELECT {table_columns_join} FROM product_2"
+        productmix_query = f"""SELECT {table_columns_join}
+                                FROM product_1
+                                UNION ALL
+                                SELECT {table_columns_join}
+                                FROM product_2
+                            """
         cursor.execute(productmix_query)
         rows = cursor.fetchall()
         for row in rows:
@@ -76,10 +79,12 @@ def main():
         required_columns_or = ' OR '.join(required_columns_null)
 
         print("\n--- テーブル'product_1''product_2'から required に null値をもつレコードを出力 ---")
-        product_null = f"""SELECT {table_columns_join} FROM product_1
+        product_null = f"""SELECT {table_columns_join}
+                            FROM product_1
                             WHERE {required_columns_or}
                             UNION ALL
-                            SELECT {table_columns_join} FROM product_2
+                            SELECT {table_columns_join}
+                            FROM product_2
                             WHERE {required_columns_or}
                         """
         cursor.execute(product_null)
@@ -94,10 +99,12 @@ def main():
         required_columns_and = ' AND '.join(required_col_notnull)
 
         print("\n--- テーブル'product_1''product_2'から required に null値をもつレコードを除外したデータ ---")
-        product_not_null = f"""SELECT {table_columns_join} FROM product_1
+        product_not_null = f"""SELECT {table_columns_join}
+                                FROM product_1
                                 WHERE {required_columns_and}
                                 UNION ALL
-                                SELECT {table_columns_join} FROM product_2
+                                SELECT {table_columns_join}
+                                FROM product_2
                                 WHERE {required_columns_and}
                             """        
         cursor.execute(product_not_null)
@@ -108,10 +115,12 @@ def main():
 
         # yamlファイルのdropに定義されているカラムを除いた{result_columns}のデータを表示
         print("\n--- yamlファイルの drop に定義されている'test'と'dummy'を除外したデータ---")
-        product_drop = f"""SELECT {result_columns_join} FROM product_1
+        product_drop = f"""SELECT {result_columns_join}
+                            FROM product_1
                             WHERE {required_columns_and}
                             UNION ALL
-                            SELECT {result_columns_join} FROM product_2
+                            SELECT {result_columns_join}
+                            FROM product_2
                             WHERE {required_columns_and}
                         """
         cursor.execute(product_drop)
@@ -122,11 +131,17 @@ def main():
         
         # priceとcountを乗算したuriage項目を追加して出力
         print("\n--- price と count を乗算した uriage 項目を追加 ---")
-        column_uriage = f"""SELECT {result_columns_join}, price * count AS uriage
-                            FROM product_1 WHERE {required_columns_and}
+        column_uriage = f"""SELECT
+                                {result_columns_join}
+                                , price * count AS uriage
+                            FROM product_1
+                            WHERE {required_columns_and}
                             UNION ALL
-                            SELECT {result_columns_join}, price * count AS uriage
-                            FROM product_2 WHERE {required_columns_and}
+                            SELECT
+                                {result_columns_join}
+                                , price * count AS uriage
+                            FROM product_2
+                            WHERE {required_columns_and}
                         """
         cursor.execute(column_uriage)
         rows = cursor.fetchall()
@@ -136,13 +151,21 @@ def main():
         # product_cdごとのuriage合計を算出して、uriageの降順に出力
         print("\n--- product_cd ごとの uriage 合計を算出して、uriage の降順に出力---")
         column_uriage_sort = f"""
-        SELECT product_cd, SUM(price * count) AS uriage
+        SELECT
+            product_cd
+            , SUM(price * count) AS uriage
         FROM(
-            SELECT product_cd, price, count
+            SELECT
+                product_cd
+                , price
+                , count
             FROM product_1
             WHERE product_cd IS NOT NULL
             UNION ALL
-            SELECT product_cd, price, count
+            SELECT
+                product_cd
+                , price
+                , count
             FROM product_2
             WHERE product_cd IS NOT NULL
             ) AS product
@@ -166,13 +189,22 @@ def main():
         result_columns_out = ', product.'.join(result_columns)
         # product_1とproduct_2 を結合したテーブルに対して masterテーブルを外部結合
         left_join = f"""
-        SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
+        SELECT
+            product.{result_columns_out}
+            , price * count AS uriage
+            , m.factory_name
         FROM(
-            SELECT {result_columns_join}, price * count AS uriage
-            FROM product_1 WHERE {required_columns_and}
+            SELECT
+                {result_columns_join}
+                , price * count AS uriage
+            FROM product_1
+            WHERE {required_columns_and}
             UNION ALL
-            SELECT {result_columns_join}, price * count AS uriage
-            FROM product_2 WHERE {required_columns_and}
+            SELECT
+                {result_columns_join}
+                , price * count AS uriage
+            FROM product_2
+            WHERE {required_columns_and}
         ) AS product
         LEFT OUTER JOIN master AS m
         ON product.factory_cd = m.factory_cd
@@ -185,13 +217,22 @@ def main():
         print("\n--- テーブル'master'と外部結合できなかった'product_1''product_2'のレコード ---")
         # product_name が None のレコードをWHERE句で指定
         na_left_join = f"""
-        SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
+        SELECT
+            product.{result_columns_out}
+            , price * count AS uriage
+            , m.factory_name
         FROM(
-            SELECT {result_columns_join}, price * count AS uriage
-            FROM product_1 WHERE {required_columns_and}
+            SELECT
+                {result_columns_join}
+                , price * count AS uriage
+            FROM product_1
+            WHERE {required_columns_and}
             UNION ALL
-            SELECT {result_columns_join}, price * count AS uriage
-            FROM product_2 WHERE {required_columns_and}
+            SELECT
+                {result_columns_join}
+                , price * count AS uriage
+            FROM product_2
+            WHERE {required_columns_and}
         ) AS product
         LEFT OUTER JOIN master AS m
         ON product.factory_cd = m.factory_cd
@@ -205,13 +246,22 @@ def main():
         print("\n--- テーブル'master'と外部結合できなかった'product_1''product_2'のレコードを除外したデータ ---")
         # product_name が None のレコードをWHERE句で除外
         drop_na_left_join = f"""
-        SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
+        SELECT
+            product.{result_columns_out}
+            , price * count AS uriage
+            , m.factory_name
         FROM(
-            SELECT {result_columns_join}, price * count AS uriage
-            FROM product_1 WHERE {required_columns_and} AND factory_cd is not null
+            SELECT
+                {result_columns_join}
+                , price * count AS uriage
+            FROM product_1
+            WHERE {required_columns_and} AND factory_cd is not null
             UNION ALL
-            SELECT {result_columns_join}, price * count AS uriage
-            FROM product_2 WHERE {required_columns_and} AND factory_cd is not null
+            SELECT
+                {result_columns_join}
+                , price * count AS uriage
+            FROM product_2
+            WHERE {required_columns_and} AND factory_cd is not null
         ) AS product
         LEFT OUTER JOIN master AS m
         ON product.factory_cd = m.factory_cd
@@ -228,10 +278,12 @@ def main():
         SELECT distinct product.product_cd
         FROM(
             SELECT {result_columns_join}
-            FROM product_1 WHERE {required_columns_and}
+            FROM product_1
+            WHERE {required_columns_and}
             UNION ALL
             SELECT {result_columns_join}
-            FROM product_2 WHERE {required_columns_and}
+            FROM product_2
+            WHERE {required_columns_and}
         ) AS product
         LEFT OUTER JOIN master AS m
         ON product.factory_cd = m.factory_cd
@@ -245,13 +297,22 @@ def main():
         print("\n--- テーブル'master'と'product_1''product_2'を外部結合したデータを dateとproduct_cd でソートしたデータ ---")
         # ORDER BY句で date と product_cd の昇順ソートを行う
         sort_date_product_cd = f"""
-        SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
+        SELECT
+            product.{result_columns_out}
+            , price * count AS uriage
+            , m.factory_name
         FROM(
-            SELECT {result_columns_join}, price * count AS uriage
-            FROM product_1 WHERE {required_columns_and}
+            SELECT
+                {result_columns_join}
+                , price * count AS uriage
+            FROM product_1
+            WHERE {required_columns_and}
             UNION ALL
-            SELECT {result_columns_join}, price * count AS uriage
-            FROM product_2 WHERE {required_columns_and}
+            SELECT
+                {result_columns_join}
+                , price * count AS uriage
+            FROM product_2
+            WHERE {required_columns_and}
         ) AS product
         LEFT OUTER JOIN master AS m
         ON product.factory_cd = m.factory_cd
@@ -275,13 +336,22 @@ def main():
         print("\n--- データをCSVファイルに出力します ---")
         output_csv_file = 'new_employee_task_1.csv'
         table_write_tocsv = f"""
-        SELECT product.{result_columns_out}, price * count AS uriage, m.factory_name
+        SELECT
+            product.{result_columns_out}
+            , price * count AS uriage
+            , m.factory_name
         FROM(
-            SELECT {result_columns_join}, price * count AS uriage
-            FROM product_1 WHERE {required_columns_and}
+            SELECT
+                {result_columns_join}
+                , price * count AS uriage
+            FROM product_1
+            WHERE {required_columns_and}
             UNION ALL
-            SELECT {result_columns_join}, price * count AS uriage
-            FROM product_2 WHERE {required_columns_and}
+            SELECT
+                {result_columns_join}
+                , price * count AS uriage
+            FROM product_2
+            WHERE {required_columns_and}
         ) AS product
         LEFT OUTER JOIN master AS m
         ON product.factory_cd = m.factory_cd
