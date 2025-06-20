@@ -1,4 +1,5 @@
 import sqlite3
+import csv
 import os
 
 def make_test_db():
@@ -26,86 +27,88 @@ def make_test_db():
         # product_1 テーブル
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS product_1 (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date TEXT,
-                product_cd TEXT,
-                price INTEGER,
-                count INTEGER,
-                factory_cd TEXT,
-                flg INTEGER,
-                test TEXT,
-                dummy TEXT
+                 id INTEGER PRIMARY KEY AUTOINCREMENT
+                ,date TEXT
+                ,product_cd TEXT
+                ,price INTEGER
+                ,count INTEGER
+                ,factory_cd TEXT
+                ,flg INTEGER
+                ,test TEXT
+                ,dummy TEXT
             )
         """)
 
         print("テーブル 'product_1' を作成しました。")
 
-        # 複数のデータを挿入 (executemanyを使用)
-        product_1_data = [
-             ('2025/6/1','productA',100,1,'fcA',0,'test','dummy'),
-             ('2025/6/1','productB',200,2,'fcA',0,'test','dummy'),
-             ('2025/6/1','productC',300,3,'fcA',0,'test','dummy'),
-             ('2025/6/1','productD',400,4,'fcB',0,'test','dummy'),
-             ('2025/6/1','productE',500,5,'fcB',0,'test','dummy'),
-             ('2025/6/2',None,100,1,'fcA',0,'test','dummy'),
-             ('2025/6/2','productB',200,2,'fcA',0,'test','dummy'),
-             ('2025/6/2',None,300,3,'fcA',0,'test','dummy'),
-             ('2025/6/2','productE',500,4,'fcB',0,'test','dummy'),
-             ('2025/6/3','productE',500,5,'fcB',0,'test','dummy'),
-        ]
-        cursor.executemany("INSERT INTO product_1 (date, product_cd, price, count, factory_cd, flg, test, dummy) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", product_1_data)
-        print("product_1にデータを挿入しました。")
-
         # product_2 テーブル
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS product_2 (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date TEXT,
-                product_cd TEXT,
-                category TEXT,
-                price INTEGER,
-                count INTEGER,
-                factory_cd TEXT,
-                flg INTEGER,
-                test TEXT,
-                dummy TEXT
+                 id INTEGER PRIMARY KEY AUTOINCREMENT
+                ,date TEXT
+                ,product_cd TEXT
+                ,category TEXT
+                ,price INTEGER
+                ,count INTEGER
+                ,factory_cd TEXT
+                ,flg INTEGER
+                ,test TEXT
+                ,dummy TEXT
             )
         """)
 
         print("テーブル 'product_2' を作成しました。")
 
-        product_2_data = [
-             ('2025/6/3','productA','typeA',100,1,'fcC',0,'test','dummy'),
-             ('2025/6/3','productB','typeA',200,2,'fcC',None,'test','dummy'),
-             ('2025/6/4','productC','typeA',300,3,'fcD',None,'test','dummy'),
-             ('2025/6/4','productD','typeA',400,4,'fcC',1,'test','dummy'),
-             ('2025/6/5','productE','typeA',500,5,'fcA',1,'test','dummy'),
-             ('2025/6/5','productA','typeA',100,1,'fcB',0,'test','dummy'),
-             ('2025/6/1','productB','typeA',200,2,'fcA',0,'test','dummy'),
-             ('2025/6/2','productC','typeA',300,3,'fcE',1,'test','dummy'),
-             ('2025/6/3','productE','typeA',500,4,'fcB',0,'test','dummy'),
-             ('2025/6/4','productE','typeB',500,5,'fcB',0,'test','dummy'),
-        ]
-        cursor.executemany("INSERT INTO product_2 (date, product_cd, category, price, count, factory_cd, flg, test, dummy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", product_2_data)
-        print("product_2にデータを挿入しました。")
-
         # master テーブル
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS master (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                factory_cd TEXT,
-                factory_name TEXT
+                 id INTEGER PRIMARY KEY AUTOINCREMENT
+                ,factory_cd TEXT
+                ,factory_name TEXT
             )
         """)
 
         print("テーブル 'master' を作成しました。")
 
-        master_data = [
-             ('fcA','工場A'),
-             ('fcB','工場B'),
-             ('fcC','工場C')
-        ]
-        cursor.executemany("INSERT INTO master (factory_cd, factory_name) VALUES (?, ?)", master_data)
+        # テーブルにレコードを挿入する
+
+        # product_1 テーブル
+        with open("product_1.csv", "r", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            # ヘッダー行をスキップ
+            next(reader)
+            for row in reader:
+                cursor.execute("""
+                    INSERT INTO product_1(date, product_cd, price, count, factory_cd, flg, test, dummy)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, row)
+
+        print("product_1にデータを挿入しました。")
+
+        # product_2 テーブル
+        with open("product_2.csv", "r", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            # ヘッダー行をスキップ
+            next(reader)
+            for row in reader:
+                cursor.execute("""
+                    INSERT INTO product_2(date, product_cd, category, price, count, factory_cd, flg, test, dummy)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, row)
+
+        print("product_2にデータを挿入しました。")
+
+        # master テーブル
+        with open("master.csv", "r", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            # ヘッダー行をスキップ
+            next(reader)
+            for row in reader:
+                cursor.execute("""
+                    INSERT INTO master(factory_cd, factory_name)
+                    VALUES (?, ?)
+                """, row)
+
         print("masterにデータを挿入しました。")
 
         # 変更をコミット（データベースに保存）する
